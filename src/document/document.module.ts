@@ -5,6 +5,7 @@ import { DocumentController } from "./document.controller";
 import { DocumentService } from "./document.service";
 import { Document } from "./entity/document.entity";
 import {IndexService} from "../index/index.service";
+import {SearchService} from "../search/search.service";
 
 @Module({
   imports: [
@@ -26,6 +27,6 @@ import {IndexService} from "../index/index.service";
     TypeOrmModule.forFeature([Document])
   ],
   controllers: [DocumentController],
-  providers: [DocumentService, IndexService],
+  providers: [DocumentService, IndexService, SearchService],
 })
 export class DocumentModule {}
