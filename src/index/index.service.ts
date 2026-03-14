@@ -1,15 +1,32 @@
-import {Injectable} from "@nestjs/common";
+import {Inject, Injectable} from "@nestjs/common";
 import {DocumentDto} from "../document/dto/document.dto";
-import {IndexDto} from "./dto/index.dto";
+import {InvertedIndex} from "./dto/index.dto";
+import {CACHE_MANAGER} from "@nestjs/cache-manager";
+import Cache from "cache-manager";
 
 @Injectable()
 export class IndexService {
   constructor(
+    @Inject(CACHE_MANAGER) private cacheManager: Cache.Cache
   ) {}
 
+  // async setCacheKeys(key: string, value: string) {
+  //   await this.cacheManager.set(key, value);
+  // }
+  //
+  // async getCacheKeys(key: string): Promise<string | undefined> {
+  //   return await this.cacheManager.get(key);
+  // }
+
   private stopWords = [
-    "de","que","e","em","entre","esse","se","enquanto","esses","essa","pelo","esta","este","onde","então","entanto","desde","nenhum","lhe","pelos","qualquer","quem","pela","porque","essas","elas","estes","sem","desses","deste","aqueles","destas","deles","sobre","é","com","na","das","para","mais","também","mas","uma","como","caso","da","nas","até","quando","qual","quais","ainda","quanto","através","portanto","ou","do","ao","por","no","um","porém","nos","não","contudo","dos","isto","pois","já","todos","tão","aos","todo","assim"
+    "de","que","e","a","o","em","entre","esse","se","enquanto","esses","essa","pelo","esta","este","onde","então","entanto","desde","nenhum","lhe","pelos","qualquer","quem","pela","porque","essas","elas","estes","sem","desses","deste","aqueles","destas","deles","sobre","é","com","na","das","para","mais","também","mas","uma","como","caso","da","nas","até","quando","qual","quais","ainda","quanto","através","portanto","ou","do","ao","por","no","um","porém","nos","não","contudo","dos","isto","pois","já","todos","tão","aos","todo","assim"
   ];
+  private InvertedIndex: InvertedIndex = new Map<string, Map<number, number>>();
+
+  normalizeString(str: string) {
+    return str.normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '');
+  }
 
   tokenizeDocument(document: DocumentDto): string[] {
     const words = document.article.toLowerCase().split(' ');
@@ -18,21 +35,25 @@ export class IndexService {
     return keyWords.reduce((acc, word) => {
       if (acc.includes(word)) return acc;
 
-      acc.push(word.normalize('NFD')
-        .replace(/[\u0300-\u036f]/g, ''));
+      acc.push(this.normalizeString(word));
 
       return acc;
     }, [] as string[]);
   }
 
   getInvertedIndexes(document: DocumentDto, tokens: string[]) {
-    const a = tokens.map((token) => {
-      const result = this.findTokenOccurrences(document.article, token);
-      return [document.id, result.count, result.indices];
+    tokens.forEach((token) => {
+      const result = this.findTokenOccurrences(this.normalizeString(document.article), token);
+      console.log(token, document.id, result.count, result.indices);
+
+      if (!this.InvertedIndex.has(token)) {
+        this.InvertedIndex.set(token, new Map());
+      }
+
+      this.InvertedIndex.get(token)!.set(document.id, result.count);
     });
 
-    console.log(a);
-    return a as IndexDto[];
+    console.log(this.InvertedIndex);
   }
 
   findTokenOccurrences(str: string, char: string) {

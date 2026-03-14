@@ -1,5 +1,1 @@
-export type IndexDto = [
-  documentId: number,
-  termFrequency: number,
-  offsets: number[]
-];
+export type InvertedIndex = Map<string, Map<number, number>>; // token -> (documentId -> count)

@@ -1,7 +1,8 @@
-import {Body, Controller, Delete, Get, Param, Post, Put} from "@nestjs/common";
+import {Body, Controller, Delete, Get, Param, Post, Put, UseInterceptors} from "@nestjs/common";
 import {DocumentDto} from "./dto/document.dto";
 import {DocumentService} from "./document.service";
 import {IndexService} from "../index/index.service";
+import {CacheInterceptor} from "@nestjs/cache-manager";
 
 @Controller('/document')
 export class DocumentController {
@@ -11,6 +12,7 @@ export class DocumentController {
   ) {}
 
   @Get()
+  @UseInterceptors(CacheInterceptor)
   findAll() {
     return this.documentService.getDocuments();
   }
@@ -22,10 +24,13 @@ export class DocumentController {
 
   @Get('/a')
   async getFirstIndex() {
-    const document = await this.documentService.getDocuments();
+    const documents = await this.documentService.getDocuments();
 
-    const tokenizedDocument = this.indexService.tokenizeDocument(document[0]);
-    const getInvertedIndexes = this.indexService.getInvertedIndexes(document[0], tokenizedDocument);
+    for(let i = 0; i < documents.length; i++) {
+      const tokenizedDocument = this.indexService.tokenizeDocument(documents[i]);
+
+      this.indexService.getInvertedIndexes(documents[i], tokenizedDocument);
+    }
   }
 
   @Get(':id')
