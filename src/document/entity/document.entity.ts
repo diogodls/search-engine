@@ -10,4 +10,7 @@ export class Document {
 
   @Column()
   article: string;
+
+  @Column({nullable: true})
+  document_length?: number;
 }

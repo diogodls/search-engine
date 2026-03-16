@@ -15,13 +15,21 @@ export class DocumentService {
     return this.documentRepository.find();
   }
 
+  getSearchDocuments(ids: number[]) {
+    return this.documentRepository
+      .createQueryBuilder('d')
+      .where('d.id IN (:...ids)', { ids })
+      .orderBy('array_position(:ids, d.id)')
+      .setParameter('ids', ids)
+      .getMany();
+  }
+
   getDocument(id: number): Promise<Document | null> {
     return this.documentRepository.findOneBy({id});
   }
 
   createDocument(document: DocumentDto): Promise<Document> {
-    console.log(document);
-    return this.documentRepository.save(document);
+    return this.documentRepository.save({...document, document_length: document.article.length});
   }
 
   deleteDocument(id: number): Promise<DeleteResult> {

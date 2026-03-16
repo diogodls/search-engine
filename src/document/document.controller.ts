@@ -4,6 +4,7 @@ import {DocumentService} from "./document.service";
 import {IndexService} from "../index/index.service";
 import {CacheInterceptor} from "@nestjs/cache-manager";
 import {SearchService} from "../search/search.service";
+import {Document} from "./entity/document.entity";
 
 @Controller('/documents')
 export class DocumentController {
@@ -24,20 +25,21 @@ export class DocumentController {
     return this.documentService.createDocument(document);
   }
 
-  @Get('/a')
-  async getFirstIndex() {
+  @Get('/search')
+  async searchDocuments(@Query('search') search: string): Promise<Document[]> {
     const documents = await this.documentService.getDocuments();
 
-    for(const document of documents) {
+    for (const document of documents) {
       const tokenizedDocument = this.indexService.tokenizeDocument(document);
 
       this.indexService.getInvertedIndexes(document, tokenizedDocument);
     }
-  }
 
-  @Get('/search')
-  searchDocuments(@Query('search') search: string): string {
-    return this.searchService.getDocumentsBySearch(search);
+    const normalizedSearch = this.indexService.cleanText(search);
+    const filteredSearch = this.indexService.filterStopWords(normalizedSearch);
+    const documentsIds = this.searchService.getDocumentsIdsBySearch(filteredSearch);
+
+    return this.documentService.getSearchDocuments(documentsIds);
   }
 
   @Get(':id')

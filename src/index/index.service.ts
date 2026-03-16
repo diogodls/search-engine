@@ -27,12 +27,14 @@ export class IndexService {
       .replace(/[^\w\s]/g, '');
   }
 
+  filterStopWords(str: string) {
+   return str.split(/\s+/).filter(word => !this.stopWords.includes(word));
+  }
+
   tokenizeDocument(document: DocumentDto): string[] {
     const cleaned = this.cleanText(document.article);
-    const words = cleaned.split(/\s+/);
 
-    return words
-      .filter(word => !this.stopWords.includes(word));
+    return this.filterStopWords(cleaned);
   }
 
   getInvertedIndexes(document: DocumentDto, tokens: string[]) {
@@ -45,8 +47,6 @@ export class IndexService {
 
       this.InvertedIndex.get(token)!.set(document.id, count.get(token) || 0);
     });
-
-    console.log(this.InvertedIndex);
   }
 
   countTokens(tokens: string[]) {
