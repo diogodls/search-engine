@@ -3,9 +3,11 @@ import { TypeOrmModule } from "@nestjs/typeorm";
 import { ConfigService } from "@nestjs/config";
 import { DocumentController } from "./document.controller";
 import { DocumentService } from "./document.service";
-import { Document } from "./entity/document.entity";
+import { Document } from "../models/document.entity";
 import {IndexService} from "../index/index.service";
 import {SearchService} from "../search/search.service";
+import {Term} from "../models/term.entity";
+import {TermDocument} from "../models/terms_document.entity";
 
 @Module({
   imports: [
@@ -20,11 +22,11 @@ import {SearchService} from "../search/search.service";
         database: configService.getOrThrow('DATABASE_NAME'),
         autoLoadEntities: true,
         entities: [Document],
-        synchronize: true,
+        synchronize: false,
       })
     },
     ),
-    TypeOrmModule.forFeature([Document])
+    TypeOrmModule.forFeature([Document, Term, TermDocument])
   ],
   controllers: [DocumentController],
   providers: [DocumentService, IndexService, SearchService],

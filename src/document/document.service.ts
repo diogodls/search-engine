@@ -1,7 +1,7 @@
 import {Injectable} from "@nestjs/common";
 import {InjectRepository} from "@nestjs/typeorm";
 import {DeleteResult, Repository, UpdateResult} from "typeorm";
-import {Document} from "./entity/document.entity";
+import {Document} from "../models/document.entity";
 import {DocumentDto} from "./dto/document.dto";
 
 @Injectable()
@@ -10,6 +10,14 @@ export class DocumentService {
     @InjectRepository(Document)
     private documentRepository: Repository<Document>,
   ) {}
+
+  cleanText(text: string) {
+    return text
+        .toLowerCase()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .replace(/[^\w\s]/g, '');
+  }
 
   getDocuments(): Promise<Document[]> {
     return this.documentRepository.find();
@@ -29,7 +37,9 @@ export class DocumentService {
   }
 
   createDocument(document: DocumentDto): Promise<Document> {
-    return this.documentRepository.save({...document, document_length: document.article.length});
+    const documentLength = this.cleanText(document.article).split(' ').length;
+
+    return this.documentRepository.save({...document, document_length: documentLength});
   }
 
   deleteDocument(id: number): Promise<DeleteResult> {
