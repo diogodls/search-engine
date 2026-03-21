@@ -3,12 +3,15 @@ import {InjectRepository} from "@nestjs/typeorm";
 import {DeleteResult, Repository, UpdateResult} from "typeorm";
 import {Document} from "../models/document.entity";
 import {DocumentDto} from "./dto/document.dto";
+import {TermDocument} from "../models/terms_document.entity";
 
 @Injectable()
 export class DocumentService {
   constructor(
     @InjectRepository(Document)
     private documentRepository: Repository<Document>,
+    @InjectRepository(TermDocument)
+    private termDocumentRepository: Repository<TermDocument>,
   ) {}
 
   cleanText(text: string) {
@@ -23,10 +26,23 @@ export class DocumentService {
     return this.documentRepository.find();
   }
 
-  getSearchDocuments(ids: number[]) {
-    return this.documentRepository
+  async getDocumentsTF(search: string[]) {
+    return await this.termDocumentRepository
+      .createQueryBuilder('td')
+      .select('td."documentId"', 'documentId')
+      .addSelect('COUNT(*)', 'tf')
+      .innerJoin('term', 't', 't.id = td."termId"')
+      .where('t.term IN (:...search)', { search })
+      .having('COUNT(DISTINCT t.term) = :size', { size: search.length })
+      .groupBy('td."documentId"')
+      .orderBy('tf', 'DESC')
+      .getRawMany();
+  }
+
+  async getSearchDocuments(ids: number[]) {
+    return await this.documentRepository
       .createQueryBuilder('d')
-      .where('d.id IN (:...ids)', { ids })
+      .where('d.id IN (:...ids)', {ids})
       .orderBy('array_position(:ids, d.id)')
       .setParameter('ids', ids)
       .getMany();
