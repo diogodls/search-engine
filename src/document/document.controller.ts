@@ -44,12 +44,16 @@ export class DocumentController {
   }
 
   @Put(':id')
-  update(@Param('id') id: number, @Body() updateDocumentDto: DocumentDto) {
-    return this.documentService.updateDocument(id, updateDocumentDto);
+  async update(@Param('id') id: number, @Body() updateDocument: DocumentDto) {
+    await this.documentService.updateDocument(id, updateDocument);
+
+    await this.indexService.updateIndexes(updateDocument);
   }
 
   @Delete(':id')
-  delete(@Param('id') id: number) {
-    return this.documentService.deleteDocument(id);
+  async delete(@Param('id') id: number) {
+    await this.documentService.deleteDocument(id);
+
+    await this.indexService.deleteTermDocument(id);
   }
 }

@@ -60,9 +60,9 @@ export class IndexService {
         .filter(token => !existingSet.has(token))
         .map(token => ({ term: token }));
 
-    if (newTerms.length > 0) {
-      await this.termRepository.save(newTerms);
-    }
+    if (!newTerms.length) return;
+
+    await this.termRepository.save(newTerms);
   }
 
   async saveTermDocument(tokenizedDocument: string[], existingTerms: Term[], documentId: number) {
@@ -81,5 +81,15 @@ export class IndexService {
     });
 
     await this.termDocumentRepository.save(terms);
+  }
+
+  async updateIndexes(document: DocumentDto) {
+    await this.termDocumentRepository.delete({documentId: document.id});
+
+    await this.createIndexes(document);
+  }
+
+  async deleteTermDocument(id: number) {
+    await this.termDocumentRepository.delete({documentId: id});
   }
 }
