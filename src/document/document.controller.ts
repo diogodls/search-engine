@@ -31,10 +31,20 @@ export class DocumentController {
   async searchDocuments(@Query('search') search: string) {
     const normalizedSearch = this.indexService.cleanText(search);
     const filteredSearch = this.indexService.filterStopWords(normalizedSearch);
-    const results = await this.documentService.getDocumentsTF(filteredSearch);
 
-    const documentIds = results.map((item) => item.documentId);
+    const documentsTF = await this.documentService.getDocumentsTF(filteredSearch);
+    const documentsIDF = await this.documentService.getDocumentsIDF(filteredSearch);
 
+    const documentsMap = new Map<number, number>();
+
+    documentsTF.forEach((item) => {
+      const itemTF_IDF = item.tf * (documentsIDF.get(item.term) ?? 0);
+      const acc = documentsMap.get(item.documentId) ?? 0;
+
+      documentsMap.set(item.documentId, itemTF_IDF + acc);
+    });
+
+    const documentIds = [...documentsMap.entries()].sort(([_, a], [_id, b]) => b - a).map(item => item[0]);
     return this.documentService.getSearchDocuments(documentIds);
   }
 

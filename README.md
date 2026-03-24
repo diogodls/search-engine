@@ -100,3 +100,4 @@ Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
 bibliography: 
 - [NestJS Documentation](https://docs.nestjs.com)
 - [Inverted Index - The Data Structure Behind Search Engines](https://www.youtube.com/watch?v=iHHqnyThrqE)
+- [Term Frequency Inverse Document Frequency (TF-IDF) Explained](https://www.youtube.com/watch?v=zLMEnNbdh4Q)
