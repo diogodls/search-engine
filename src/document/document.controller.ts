@@ -1,15 +1,27 @@
-import {Body, Controller, Delete, Get, Param, Post, Put, Query, UseInterceptors} from "@nestjs/common";
+import {
+  BadRequestException,
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param, ParseIntPipe,
+  Post,
+  Put,
+  Query,
+  UseInterceptors
+} from "@nestjs/common";
 import {DocumentDto} from "./dto/document.dto";
 import {DocumentService} from "./document.service";
 import {IndexService} from "../index/index.service";
 import {CacheInterceptor} from "@nestjs/cache-manager";
-import {ExceptionHandler} from "@nestjs/core/errors/exception-handler";
+import {SearchService} from "../search/search.service";
 
 @Controller('/documents')
 export class DocumentController {
   constructor(
     private readonly documentService: DocumentService,
     private readonly indexService: IndexService,
+    private readonly searchService: SearchService,
   ) {}
 
   @Get()
@@ -22,9 +34,11 @@ export class DocumentController {
   async create(@Body() document: DocumentDto) {
     const newDocument =  await this.documentService.createDocument(document);
 
-    if (!newDocument.id) return new ExceptionHandler().handle(new Error('Failed to create document'));
+    if (!newDocument.id) throw new BadRequestException();
 
     await this.indexService.createIndexes(newDocument);
+
+    return newDocument;
   }
 
   @Get('/search')
@@ -32,8 +46,8 @@ export class DocumentController {
     const normalizedSearch = this.indexService.cleanText(search);
     const filteredSearch = this.indexService.filterStopWords(normalizedSearch);
 
-    const documentsTF = await this.documentService.getDocumentsTF(filteredSearch);
-    const documentsIDF = await this.documentService.getDocumentsIDF(filteredSearch);
+    const documentsTF = await this.searchService.getDocumentsTF(filteredSearch);
+    const documentsIDF = await this.searchService.getDocumentsIDF(filteredSearch);
 
     const documentsMap = new Map<number, number>();
 
@@ -49,19 +63,19 @@ export class DocumentController {
   }
 
   @Get(':id')
-  findOne(@Param('id') id: number) {
+  findOne(@Param('id', ParseIntPipe) id: number) {
     return this.documentService.getDocument(id);
   }
 
   @Put(':id')
-  async update(@Param('id') id: number, @Body() updateDocument: DocumentDto) {
+  async update(@Param('id', ParseIntPipe) id: number, @Body() updateDocument: DocumentDto) {
     await this.documentService.updateDocument(id, updateDocument);
 
-    await this.indexService.updateIndexes(updateDocument);
+    await this.indexService.updateIndexes({...updateDocument, id: id});
   }
 
   @Delete(':id')
-  async delete(@Param('id') id: number) {
+  async delete(@Param('id', ParseIntPipe) id: number) {
     await this.documentService.deleteDocument(id);
 
     await this.indexService.deleteTermDocument(id);

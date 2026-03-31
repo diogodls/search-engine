@@ -32,7 +32,7 @@ export class IndexService {
   filterStopWords(str: string) {
    const filteredString = str.split(/\s+/).filter(word => !this.stopWords.includes(word));
 
-   return [...new Set(filteredString)];
+   return [...new Set(filteredString)]; //todo: corrigir depois
   }
 
   tokenizeDocument(document: DocumentDto): string[] {
@@ -42,6 +42,8 @@ export class IndexService {
   }
 
   async createIndexes(document: DocumentDto) {
+    if (!document.id) return;
+
     const tokenizedDocument = this.tokenizeDocument(document);
     const uniqueTokens = Array.from(new Set(tokenizedDocument));
     const existingTerms = await this.termRepository.findBy({ term: In(uniqueTokens) });
