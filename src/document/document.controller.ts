@@ -69,15 +69,19 @@ export class DocumentController {
 
   @Put(':id')
   async update(@Param('id', ParseIntPipe) id: number, @Body() updateDocument: DocumentDto) {
-    await this.documentService.updateDocument(id, updateDocument);
+    const updatedDocument = await this.documentService.updateDocument(id, updateDocument);
 
     await this.indexService.updateIndexes({...updateDocument, id: id});
+
+    return updatedDocument;
   }
 
   @Delete(':id')
   async delete(@Param('id', ParseIntPipe) id: number) {
-    await this.documentService.deleteDocument(id);
+    const deletedDocument = await this.documentService.deleteDocument(id);
 
     await this.indexService.deleteTermDocument(id);
+    //todo: make a pattern for the response of endpoints
+    return deletedDocument;
   }
 }

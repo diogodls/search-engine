@@ -3,21 +3,15 @@ import {InjectRepository} from "@nestjs/typeorm";
 import {DeleteResult, Repository, UpdateResult} from "typeorm";
 import {Document} from "../models/document.entity";
 import {DocumentDto} from "./dto/document.dto";
+import {IndexService} from "../index/index.service";
 
 @Injectable()
 export class DocumentService {
   constructor(
     @InjectRepository(Document)
     private documentRepository: Repository<Document>,
+    private readonly indexService: IndexService,
   ) {}
-
-  cleanText(text: string) {
-    return text
-        .toLowerCase()
-        .normalize('NFD')
-        .replace(/[\u0300-\u036f]/g, '')
-        .replace(/[^\w\s]/g, '');
-  }
 
   getDocuments(): Promise<Document[]> {
     return this.documentRepository.find();
@@ -28,7 +22,7 @@ export class DocumentService {
   }
 
   createDocument(document: DocumentDto): Promise<Document> {
-    const documentLength = this.cleanText(document.article).split(' ').length;
+    const documentLength = this.getDocumentLength(document.article);
 
     return this.documentRepository.save({...document, document_length: documentLength});
   }
@@ -38,7 +32,13 @@ export class DocumentService {
   }
 
   updateDocument(id: number, document: DocumentDto): Promise<UpdateResult> {
-    return this.documentRepository.update(id, document);
+    const documentLength = this.getDocumentLength(document.article);
+
+    return this.documentRepository.update(id, {...document, document_length: documentLength});
+  }
+
+  getDocumentLength(article: string) {
+    return this.indexService.cleanText(article).split(' ').length
   }
 
   async getSearchDocuments(ids: number[]) {

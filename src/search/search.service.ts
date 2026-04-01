@@ -31,7 +31,7 @@ export class SearchService {
     return termFrequency.map((item) => {
       return {
         term: item.term,
-        tf: Number(item.count)/item.documentLength,
+        tf: +item.count/item.documentLength,
         documentId: item.documentId,
       }
     });

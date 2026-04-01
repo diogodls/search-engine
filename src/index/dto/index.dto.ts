@@ -1,1 +1,0 @@
-export type InvertedIndex = Map<string, Map<number, number>>; // token -> (documentId -> count)
